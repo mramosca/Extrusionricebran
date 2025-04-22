@@ -1,0 +1,59 @@
+qiime metadata tabulate \
+  --m-input-file /scratch/bell/mramosca/rf-Procedure/predictions.qza \
+  --o-visualization /scratch/bell/mramosca/rf-Procedure/predictions.qzv
+
+qiime metadata tabulate \
+  --m-input-file /scratch/bell/mramosca/rf-Procedure/probabilities.qza \
+  --o-visualization /scratch/bell/mramosca/rf-Procedure/probabilities.qzv
+
+qiime metadata tabulate \
+  --m-input-file /scratch/bell/mramosca/rf-Procedure/feature_importance.qza \
+  --o-visualization /scratch/bell/mramosca/rf-Procedure/feature_importance.qzv
+qiime feature-table filter-features \
+  --i-table /scratch/bell/mramosca/table.qza \
+  --m-metadata-file /scratch/bell/mramosca/rf-Procedure/feature_importance.qza \
+  --o-filtered-table /scratch/bell/mramosca/rf-Procedure/important-feature-table.qza
+
+qiime sample-classifier heatmap \
+  --i-table /scratch/bell/mramosca/table.qza \
+  --i-importance /scratch/bell/mramosca/rf-Procedure/feature_importance.qza \
+  --m-sample-metadata-file /scratch/bell/mramosca/extrusion.tsv \
+  --m-sample-metadata-column Procedure \
+  --p-group-samples \
+  --p-feature-count 30 \
+  --o-filtered-table /scratch/bell/mramosca/rf-Procedure/important-feature-table-top-30.qza \
+  --o-heatmap /scratch/bell/mramosca/rf-Procedure/important-feature-heatmap.qzv
+
+qiime sample-classifier heatmap \
+  --i-table /scratch/bell/mramosca/table.qza \
+  --i-importance /scratch/bell/mramosca/rf-Procedure/feature_importance.qza \
+  --m-sample-metadata-file /scratch/bell/mramosca/extrusion.tsv \
+  --m-sample-metadata-column Procedure \
+  --m-feature-metadata-file /scratch/bell/mramosca/taxonomy.qza \
+  --m-feature-metadata-column Taxon \
+  --p-group-samples \
+  --p-feature-count 30 \
+  --o-filtered-table /scratch/bell/mramosca/rf-Procedure/important-feature-table-taxonomy-top-30.qza \
+  --o-heatmap /scratch/bell/mramosca/rf-Procedure/important-feature-heatmap-taxonomy.qzv
+qiime sample-classifier classify-samples \
+  --i-table table.qza \
+  --m-metadata-file /scratch/bell/mramosca/extrusion.tsv \
+  --m-metadata-column Extruded \
+  --p-optimize-feature-selection \
+  --p-parameter-tuning \
+  --p-estimator RandomForestClassifier \
+  --p-n-estimators 100 \
+  --p-random-state 123 \
+  --output-dir rf-Extruded
+
+qiime sample-classifier classify-samples \
+  --i-table table.qza \
+  --m-metadata-file /scratch/bell/mramosca/extrusion.tsv \
+  --m-metadata-column Procedure \
+  --p-optimize-feature-selection \
+  --p-parameter-tuning \
+  --p-estimator RandomForestClassifier \
+  --p-n-estimators 100 \
+  --p-random-state 123 \
+  --output-dir rf-Procedure
+
