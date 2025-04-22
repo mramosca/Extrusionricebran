@@ -1,0 +1,165 @@
+qiime dada2 denoise-paired \
+  --i-demultiplexed-seqs demux.qza \
+  --p-trim-left-f 0 \
+  --p-trim-left-r 0 \
+  --p-trunc-len-f 0 \
+  --p-trunc-len-r 0 \
+  --p-max-ee-f 2 \
+  --p-max-ee-r 2 \
+  --p-trunc-q 2 \
+  --o-representative-sequences rep-seqs-dada2.qza \
+  --o-table table-dada2.qza \
+  --o-denoising-stats stats-dada2.qza
+
+# List archives in diretory
+ls
+
+# Tabulate metadata statisctics
+qiime metadata tabulate \
+  --m-input-file stats-dada2.qza \
+  --o-visualization stats-dada2.qzv
+
+# Rename DADA2 archives
+mv rep-seqs-dada2.qza rep-seqs.qza
+mv table-dada2.qza table.qza
+
+
+
+#  CSV to TSV
+tr ',' '\t' < extrusion.csv > extrusion.tsv
+
+
+
+# Summary table metadata
+qiime feature-table summarize \
+  --i-table table.qza \
+  --o-visualization table.qzv \
+  --m-sample-metadata-file extrusion.tsv
+
+# Tabulate represntative secuences
+qiime feature-table tabulate-seqs \
+  --i-data rep-seqs.qza \
+  --o-visualization rep-seqs.qzv
+
+
+# diversity metric analisys
+qiime diversity core-metrics-phylogenetic \
+  --i-phylogeny rooted-tree.qza \
+  --i-table table.qza \
+  --p-sampling-depth 3970 \
+  --m-metadata-file extrusion.tsv \
+  --output-dir core-metrics-results
+
+
+# alpha diversity 
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity core-metrics-results/faith_pd_vector.qza \
+  --m-metadata-file extrusion.tsv \
+  --o-visualization core-metrics-results/faith-pd-group-significance.qzv
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity core-metrics-results/evenness_vector.qza \
+  --m-metadata-file extrusion.tsv \
+  --o-visualization core-metrics-results/evenness-group-significance.qzv
+
+
+#beta diversity
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file /scratch/bell/mramosca/extrusion.tsv \
+  --m-metadata-column Treatment \
+  --o-visualization core-metrics-results/unweighted-unifrac-treatment-significance.qzv \
+  --p-pairwise
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file /scratch/bell/mramosca/extrusion.tsv \
+  --m-metadata-column Procedure \
+  --o-visualization core-metrics-results/unweighted-unifrac-procedure-significance.qzv \
+  --p-pairwise
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file /scratch/bell/mramosca/extrusion.tsv \
+  --m-metadata-column Property \
+  --o-visualization core-metrics-results/unweighted-unifrac-property-significance.qzv \
+  --p-pairwise
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file /scratch/bell/mramosca/extrusion.tsv \
+  --m-metadata-column Cookingtemperature \
+  --o-visualization core-metrics-results/unweighted-unifrac-cookingtemperature-significance.qzv \
+  --p-pairwise
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file /scratch/bell/mramosca/extrusion.tsv \
+  --m-metadata-column Screwspeedrmin \
+  --o-visualization core-metrics-results/unweighted-unifrac-screwspeedrmin-significance.qzv \
+  --p-pairwise
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file /scratch/bell/mramosca/extrusion.tsv \
+  --m-metadata-column Materialmoisture \
+  --o-visualization core-metrics-results/unweighted-unifrac-materialmoisture-significance.qzv \
+  --p-pairwise
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file /scratch/bell/mramosca/extrusion.tsv \
+  --m-metadata-column Time \
+  --o-visualization core-metrics-results/unweighted-unifrac-time-significance.qzv \
+  --p-pairwise
+
+qiime emperor plot \
+  --i-pcoa core-metrics-results/unweighted_unifrac_pcoa_results.qza \
+  --m-metadata-file /scratch/bell/mramosca/extrusion.tsv \
+  --p-custom-axes Time \
+  --o-visualization core-metrics-results/unweighted-unifrac-emperor-time.qzv
+
+qiime emperor plot \
+  --i-pcoa core-metrics-results/bray_curtis_pcoa_results.qza \
+  --m-metadata-file /scratch/bell/mramosca/extrusion.tsv \
+  --p-custom-axes Time \
+  --o-visualization core-metrics-results/bray-curtis-emperor-time.qzv
+
+
+qiime diversity alpha-rarefaction \
+  --i-table table.qza \
+  --i-phylogeny rooted-tree.qza \
+  --p-max-depth 4000 \
+  --m-metadata-file /scratch/bell/mramosca/extrusion.tsv \
+  --o-visualization alpha-rarefaction.qzv
+
+
+
+wget \
+  -O "gg-13-8-99-515-806-nb-classifier.qza" \
+  "https://data.qiime2.org/2024.2/common/gg-13-8-99-515-806-nb-classifier.qza"
+
+
+qiime feature-classifier classify-sklearn \
+  --i-classifier gg-13-8-99-515-806-nb-classifier.qza \
+  --i-reads rep-seqs.qza \
+  --o-classification taxonomy.qza
+
+qiime metadata tabulate \
+  --m-input-file taxonomy.qza \
+  --o-visualization taxonomy.qzv
+
+qiime taxa barplot \
+  --i-table table.qza \
+  --i-taxonomy taxonomy.qza \
+  --m-metadata-file /scratch/bell/mramosca/extrusion.tsv \
+  --o-visualization taxa-bar-plots.qzv
+
+
+qiime feature-table summarize \
+  --i-table table.qza \
+  --o-visualization table.qzv
+
+
+ 
+
